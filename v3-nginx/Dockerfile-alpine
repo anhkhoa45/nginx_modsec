@@ -141,7 +141,13 @@ ENV ACCESSLOG=/var/log/nginx/access.log \
     TIMEOUT=60s \
     WORKER_CONNECTIONS=1024 \
     LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib \
-    NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+    NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx \
+    PARANOIA=1 \
+    ANOMALY_INBOUND=5 \
+    ANOMALY_OUTBOUND=4 \
+    BLOCKING_PARANOIA=1 \
+    MODSEC_PCRE_MATCH_LIMIT=100000 \
+    MODSEC_PCRE_MATCH_LIMIT_RECURSION=100000
 
 RUN set -eux; \
     apk add --no-cache \
@@ -171,6 +177,7 @@ COPY v3-nginx/templates /etc/nginx/templates/
 COPY src/etc/modsecurity.d/modsecurity-override.conf /etc/nginx/templates/modsecurity.d/modsecurity-override.conf.template
 COPY src/etc/modsecurity.d/setup.conf /etc/nginx/templates/modsecurity.d/setup.conf.template
 COPY v3-nginx/docker-entrypoint.d/*.sh /docker-entrypoint.d/
+COPY owasp-crs /opt/owasp-crs
 
 # Comment out the SecDisableBackendCompression option since it is not supported in V3
 RUN sed -i 's/^\(SecDisableBackendCompression .*\)/# \1/' /etc/nginx/templates/modsecurity.d/modsecurity-override.conf.template
@@ -181,6 +188,7 @@ RUN set -eux; \
     ln -s /usr/local/modsecurity/lib/libmodsecurity.so.${MODSEC_VERSION} /usr/local/modsecurity/lib/libmodsecurity.so; \
     ln -s /usr/local/lib/libfuzzy.so.${FUZZY_VERSION} /usr/local/lib/libfuzzy.so; \
     ln -s /usr/local/lib/libfuzzy.so.${FUZZY_VERSION} /usr/local/lib/libfuzzy.so.2; \
+    ln -sv /opt/owasp-crs /etc/modsecurity.d/; \
     chgrp -R 0 /var/cache/nginx/ /var/log/ /var/run/ /usr/share/nginx/ /etc/nginx/ /etc/modsecurity.d/; \
     chmod -R g=u /var/cache/nginx/ /var/log/ /var/run/ /usr/share/nginx/ /etc/nginx/ /etc/modsecurity.d/
 

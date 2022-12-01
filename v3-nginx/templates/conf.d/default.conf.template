@@ -9,7 +9,6 @@ server {
     listen ${PORT} default_server;
 
     server_name ${SERVER_NAME};
-    set $upstream ${BACKEND};
     set $always_redirect ${NGINX_ALWAYS_TLS_REDIRECT};
 
     location / {
@@ -33,7 +32,8 @@ server {
     listen ${SSL_PORT} ssl;
 
     server_name ${SERVER_NAME};
-    set $upstream ${BACKEND};
+    set $venus_host ${VENUS_HOST};
+    set $admin_host ${ADMIN_HOST};
 
     ssl_certificate ${PROXY_SSL_CERT};
     ssl_certificate_key ${PROXY_SSL_CERT_KEY};
@@ -52,13 +52,33 @@ server {
 
     ssl_verify_client ${PROXY_SSL_VERIFY};
 
-    location / {
+    location /${VENUS_PATH} {
         client_max_body_size 0;
+        rewrite /${VENUS_PATH}(.*) /$1 break;
 
         include includes/proxy_backend.conf;
+        proxy_pass $venus_host;
 
         index index.html index.htm;
         root /usr/share/nginx/html;
+    }
+
+    location /${ADMIN_PATH} {
+        client_max_body_size 0;
+        rewrite /${ADMIN_PATH}(.*) /$1 break;
+
+        include includes/proxy_backend.conf;
+        proxy_pass $admin_host;
+
+        index index.html index.htm;
+        root /usr/share/nginx/html;
+    }
+
+
+    location / {
+        client_max_body_size 0;
+        include includes/proxy_backend.conf;
+        proxy_pass $venus_host;
     }
 
     include includes/location_common.conf;
